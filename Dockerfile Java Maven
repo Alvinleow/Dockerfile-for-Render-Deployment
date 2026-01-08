@@ -1,0 +1,33 @@
+# --- Stage 1: Build the Application ---
+# We use an image that has Java 17 installed
+FROM eclipse-temurin:17-jdk-jammy AS build
+WORKDIR /app
+
+# 1. Copy Maven wrapper and config first (for caching)
+COPY .mvn/ .mvn
+COPY mvnw pom.xml ./
+
+# 2. Make the wrapper executable (Common Windows -> Linux issue)
+RUN chmod +x mvnw
+
+# 3. Download dependencies (Go grab a coffee, this takes a minute)
+RUN ./mvnw dependency:go-offline
+
+# 4. Copy source code and build the JAR file
+COPY src ./src
+RUN ./mvnw clean package -DskipTests
+
+# --- Stage 2: Run the Application ---
+# Use a lightweight JRE (Runtime Environment)
+FROM eclipse-temurin:17-jre-jammy
+WORKDIR /app
+
+# 5. Copy the JAR file from the build stage
+# (Spring Boot usually names it with snapshot, we rename it to app.jar for simplicity)
+COPY --from=build /app/target/*.jar app.jar
+
+# 6. Expose Port (Spring defaults to 8080)
+EXPOSE 8080
+
+# 7. Start the app
+ENTRYPOINT ["java", "-jar", "app.jar"]

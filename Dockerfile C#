@@ -1,0 +1,26 @@
+# --- Stage 1: Build the Application ---
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /app
+
+# 1. Copy the project file and restore dependencies
+# (This layer is cached if you don't add new packages)
+COPY *.csproj ./
+RUN dotnet restore
+
+# 2. Copy the rest of the code and build
+COPY . ./
+RUN dotnet publish -c Release -o out
+
+# --- Stage 2: Run the Application ---
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
+WORKDIR /app
+
+# 3. Copy only the built files from Stage 1
+COPY --from=build /app/out .
+
+# 4. Expose the port Render expects (Standard is 80 or 8080)
+ENV ASPNETCORE_URLS=http://+:80
+EXPOSE 80
+
+# 5. Start the app (REPLACE 'MyProjectName.dll' with your actual DLL name!)
+ENTRYPOINT ["dotnet", "MyProjectName.dll"]

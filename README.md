@@ -1,0 +1,3 @@
+- Make sure remove the language name after Dockerfile, keep the file named "Dockerfile" only.
+- For C#, REPLACE 'MyProjectName.dll' with your actual DLL name in the Dockerfile.
+- You can always modify to fits your porject's run environment.
